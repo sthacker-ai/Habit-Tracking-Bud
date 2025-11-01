@@ -116,6 +116,62 @@ Success metrics (initial):
 - M2: Add cloud sync with simple auth (OAuth) + serverless storage (5-10 days).
 - M3: Add CI workflow + tests and publish package (1-2 days).
 
----
 
-*If you'd like, I can commit this `PRD.md` file to the repo and push it to GitHub. Say the word and I will commit and push.*
+
+## Phased Roadmap & Prioritized Feature Suggestions
+Below is a practical, prioritized roadmap that maps your ideas into phases (M1..M4). Each phase includes feature descriptions, why it's valuable, rough estimates, dependencies, and acceptance criteria. Items are prioritized by ease of implementation and user impact.
+
+PHASE M1 — Core backend + safe APIs (Low effort, high value)
+- Persistent backend (Firebase Firestore)
+   - Why: Moves the app from device-only to cloud-backed so settings, reminders, and stats sync across devices.
+   - Rough estimate: 1-3 days for simple Firestore integration; 3-7 days to add user accounts and rules.
+   - Dependencies: Firebase project + client config, server rules.
+   - Acceptance: Reminders/stats persist and sync across devices logged into same account.
+
+- Server-side quote fetcher (serverless function)
+   - Why: Keep AI API keys off the client and enable richer prompts and caching.
+   - Rough estimate: 1-2 days (serverless function + endpoint).
+   - Acceptance: App calls a secure endpoint for daily quotes; no client-side Gemini key required.
+
+PHASE M2 — Calendar & scheduling intelligence (Medium effort)
+- Calendar import (Google/Microsoft)
+   - Why: Enables conflict-aware scheduling by reading the user's calendar.
+   - Rough estimate: 3-6 days for OAuth + read-only calendar events.
+   - Acceptance: User connects calendar; today's events appear in-app and block suggested times.
+
+- Auto-scheduling around calendar (conflict-aware)
+   - Why: Create reminders that avoid existing events when user requests recurring breaks.
+   - Rough estimate: 2-5 days for initial algorithm + UI.
+   - Acceptance: Given user constraints (every X mins for Y mins), the app proposes non-conflicting reminder times and allows confirmation.
+
+PHASE M3 — Mobile capture & natural language (Higher effort)
+- Mobile photo import + OCR for calendar parsing
+   - Why: Capture a physical calendar or screenshot and extract events automatically.
+   - Rough estimate: 3-8 days for basic OCR + confirmation UX.
+   - Acceptance: Extracted events are shown for user confirmation with reasonable accuracy on clear images.
+
+- Speech-to-text + rule-based natural language parsing
+   - Why: Let users add or edit reminders by speaking ("water sip every 45 minutes for 10 seconds").
+   - Rough estimate: 3-7 days for Web Speech API integration + rule-based parser; 1-3 days more for server LLM fallback.
+   - Acceptance: Common phrasings produce correct reminders; speech fallback errors are handled gracefully.
+
+PHASE M4 — Conversational editing & advanced AI (Higher effort)
+- Conflict suggestions & voice edits
+   - Why: When conflicts occur, suggest next windows and enable voice-based edits.
+   - Rough estimate: 3-6 days for UI & heuristics; more with LLM-driven dialogs.
+   - Acceptance: The app can suggest alternative slots and accept edits via voice or tap.
+
+- LLM-based intent parsing for complex commands
+   - Why: Robustly parse complex scheduling requests and multi-step instructions.
+   - Rough estimate: 5-14 days for integration, prompts, safety.
+   - Acceptance: Accurate parsing of complex commands and safe confirmation flows.
+
+Additional helpful features
+- Native notifications & background scheduling for mobile.
+- Import/export (JSON) for portability.
+- Analytics dashboard for trend insights.
+
+Prioritization rationale
+- Start with M1 (Firestore + serverless quote fetch) to unlock sync and remove client API keys.
+- Then M2 (calendar & scheduling) because it directly addresses your main use-case: scheduling breaks around meetings.
+- M3/M4 add mobile capture, speech, and AI-driven parsing — higher effort but high UX value; start with rule-based parsers and pilot before scaling.
