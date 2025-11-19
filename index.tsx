@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { GoogleGenAI } from "@google/genai";
 
 // --- TYPES ---
 type Reminder = {
@@ -82,32 +81,34 @@ const fetchQuote = async (): Promise<string> => {
       return cachedQuote;
     }
 
-  const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_API_KEY;
-    if (!apiKey) {
-      console.warn("Gemini API key missing (VITE_GEMINI_API_KEY). Using fallback quote.");
+    // Call secure serverless endpoint instead of exposing API key client-side
+    try {
+      const response = await fetch('/api/fetch-quote', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to fetch quote from server:', response.status);
+        localStorage.setItem(QUOTE_CACHE_KEY, QUOTE_FALLBACK);
+        localStorage.setItem(QUOTE_CACHE_DATE_KEY, today);
+        return QUOTE_FALLBACK;
+      }
+
+      const data = await response.json();
+      const quote = data.quote || QUOTE_FALLBACK;
+
+      localStorage.setItem(QUOTE_CACHE_KEY, quote);
+      localStorage.setItem(QUOTE_CACHE_DATE_KEY, today);
+      return quote;
+    } catch (error) {
+      console.error('Error fetching quote:', error);
       localStorage.setItem(QUOTE_CACHE_KEY, QUOTE_FALLBACK);
       localStorage.setItem(QUOTE_CACHE_DATE_KEY, today);
       return QUOTE_FALLBACK;
     }
-
-    const ai = new GoogleGenAI({ apiKey });
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: "Generate one short, impactful, inspirational quote about personal growth or success. Only return the quote text.",
-      config: { temperature: 0.9 }
-    });
-
-  const rawText: string = (response as any)?.text || '';
-  const cleaned = rawText
-      .replace(/"/g, '')
-      .replace(/^\s+|\s+$/g, '')
-      .replace(/—.*$/, '')
-      .trim();
-
-    const finalQuote = cleaned || QUOTE_FALLBACK;
-    localStorage.setItem(QUOTE_CACHE_KEY, finalQuote);
-    localStorage.setItem(QUOTE_CACHE_DATE_KEY, today);
-    return finalQuote;
   } catch (error) {
     console.error("Failed to fetch quote:", error);
     const today = new Date().toISOString().split('T')[0];
@@ -692,7 +693,8 @@ const App = () => {
   const [theme, setTheme] = useLocalStorage<'light' | 'dark'>('theme', 'dark');
   const [isSessionActive, setIsSessionActive] = useLocalStorage('isSessionActive', false);
   const [quote, setQuote] = useState("Loading your daily inspiration...");
-  const hasGeminiKey = !!((import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.VITE_API_KEY);
+  // API key now secure on server - quotes always available
+  const hasGeminiKey = true;
 
   const [pendingBreaks, setPendingBreaks] = useState<Reminder[]>([]);
   const [activeBreaks, setActiveBreaks] = useState<ActiveBreak[]>([]);
